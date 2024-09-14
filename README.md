@@ -278,7 +278,7 @@ are responsible for saving the JSON file to disk (and maybe compressing it) and 
 
 see `try-pki` for an example.
 
-### word of caution
+### misc notes
 
 - performance
 
@@ -291,3 +291,9 @@ see `try-pki` for an example.
   permission like `rw-------` to the file, use S3 and set permissions, whatever you learned on your first day
   as an admin!
 
+- Why are my certs always addressed to Contoso Corporation in Seattle ??
+
+  If no contact info is provided, we fallback to the default distinguished info provided
+  by `default-distinguished-name.js`.  
+  To override, supply argument `{conf_args:{country:**,state:**,city:**...}}` to the
+  CA's `.add_server()`, `.add_client()` and `.add_ca()` methods. 

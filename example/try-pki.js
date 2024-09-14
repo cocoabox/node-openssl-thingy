@@ -2,6 +2,7 @@
 
 const {pki} = require('../lib');
 const {CA} = pki;
+const {inspect} = require('node:util');
 const fsPromises = require('node:fs').promises;
 
 (async function () {
@@ -22,6 +23,11 @@ const fsPromises = require('node:fs').promises;
         await root_ca.create_cert('my_root_ca' , {
             key_args ,
             conf_args : {
+                country : 'JP' ,
+                state : 'Tokyo' ,
+                city : 'Spam City' ,
+                organization_name : 'Ham Corp' ,
+                organization_unit : 'Egg Dept' ,
                 alt_names : ['my-root-ca' , 'my-root-ca.local' , '*.my-root-ca.local'] ,
             } ,
             days : 9999 ,
@@ -30,7 +36,10 @@ const fsPromises = require('node:fs').promises;
         console.warn('create server');
         await root_ca.add_server('my_server' , {
             days : 9999 ,
-            conf_args : {alt_names : ['my-server' , 'my-server.local' , '*.my-server.local']} ,
+            conf_args : {
+                alt_names : ['my-server' , 'my-server.local' , '*.my-server.local'] ,
+                // since no contact info is supplied, we'll use default supplied in : default-distinguished-name.js
+            } ,
             key_args ,
         });
 
@@ -56,6 +65,7 @@ const fsPromises = require('node:fs').promises;
             days : 9999 ,
         });
 
+        console.warn('create another intermediate CA');
         const another_inte_ca = await inte_ca.add_ca('another-intermediate-ca' , {
             conf_args : {alt_names : ['another-inte-ca' , 'another-inte-ca.local' , '*.another-inte-ca.local']} ,
             key_args ,
@@ -84,8 +94,9 @@ const fsPromises = require('node:fs').promises;
         const info = await root_ca.get_crl_info();
         console.warn(info);
 
-        console.warn('printing root ca');
-        console.warn(root_ca);
+        console.warn('\n\nprinting root ca\n');
+        console.warn(inspect(root_ca , {depth : null , colors : true}));
+        console.warn('\n');
 
         try {
             console.warn('tryuing to get revokee cert');
