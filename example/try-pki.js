@@ -44,8 +44,12 @@ const fsPromises = require('node:fs').promises;
         });
 
         console.warn('create user');
-        await root_ca.add_client('user1' , {
-            conf_args : {email : 'user1@my_server'} ,
+        await root_ca.add_client('user1' , 'user1@my_server' , {
+            conf_args : {
+                country : 'JP' ,
+                state : 'Gunma' ,
+                city : 'Hoge City' ,
+            } ,
             days : 9999 ,
             key_args ,
         });
