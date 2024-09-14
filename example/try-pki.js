@@ -7,7 +7,7 @@ const fsPromises = require('node:fs').promises;
 
 (async function () {
     try {
-        // private key to use 2048 bit for embedded system (mbedtls) compatibility
+        // use 2048 bit for embedded system (mbedtls) compatibility
         const key_args = {
             key_algorithm : 'rsa' ,
             key_options : {bits : 2048} ,
@@ -15,7 +15,7 @@ const fsPromises = require('node:fs').promises;
         const root_ca = new CA();
         // write to disk whenever the Root CA updates
         root_ca.on_updated(async (why , origin) => {
-            console.log(`  .. writing because ${why} from : ${origin?.name ?? 'no-name'}`);
+            console.log(`  .. writing because ${why} from : ${origin?.name ?? 'no-name'} (${origin?.path})`);
             await fsPromises.writeFile('root-ca.json' , root_ca.toString() , 'utf8');
         });
 
@@ -77,11 +77,15 @@ const fsPromises = require('node:fs').promises;
         });
 
         console.warn('create another server');
-        await another_inte_ca.add_server('another_server' , {
+        const another_server = await another_inte_ca.add_server('another_server' , {
             days : 365 ,
             conf_args : {alt_names : ['another-server' , 'another-server.local' , '*.another-server.local']} ,
             key_args ,
         });
+
+        console.warn('--> the path to another-server is :' , another_server.path); // gives : /02/01/00
+        const resolved_node = root_ca.resolve_path(another_server.path); // this gives : another_server
+        const resolved_node2 = another_inte_ca.resolve_path(another_server.path); // this gives : another_server as well
 
         await fsPromises.writeFile('server2-cert.pem' , server2.cert);
         await fsPromises.writeFile('server2-key.pem' , server2.private_key);
