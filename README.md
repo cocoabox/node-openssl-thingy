@@ -1,18 +1,18 @@
-# openssl-utils
+# nodejs-openssl-thingy
 
-provides a set of nodejs wrappers and shit like that for the `openssl` command line app on ur computer.
+Provides a set of nodejs wrappers and classes that for the `openssl` command line app on your computer.
 
-| user level             | see section...      | means                                                                                                                                 | bring your own..                             |
-|------------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| openssl guru 🌶️🌶️🌶️ | basic usage         | quite literally a `spawn()` wrapper for `openssl`                                                                                     | CA configuration, cert, keys, everything     |
-| openssl semi-guru 🌶️  | advanced usage      | wraps some common openssl usage like csr sign, generate  keypairs                                                                     | (same)                                       | 
-| dummies 🍼             | more advanced usage | manages all CA configuration, cert storage, key storage, database, revocation list for you; you just do `my_ca.create_server(..)` etc | file to store the Root CA in serialized form |
+| user level        | see section...      | means                                                                                                                                 | bring your own..                             |
+|-------------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| openssl guru      | basic usage         | quite literally a `spawn()` wrapper for `openssl`                                                                                     | CA configuration, cert, keys, everything     |
+| openssl semi-guru | advanced usage      | wraps some common openssl usage like csr sign, generate  keypairs                                                                     | (same)                                       | 
+| dummies 🍼        | more advanced usage | manages all CA configuration, cert storage, key storage, database, revocation list for you; you just do `my_ca.create_server(..)` etc | file to store the Root CA in serialized form |
 
-almost everything is implemented as `async function`, i.e. you need the `await` keyword to run it properly
+Plmost everything is implemented as `async function`, i.e. you need the `await` keyword to run it properly
 
-## basic usage ️🌶️🌶️️🌶️️
+## basic usage ️
 
-the `openssl()` async function executes the `openssl` app on your computer. this `openssl()` is not aware of any
+The `openssl()` async function executes the `openssl` app on your computer. this `openssl()` is not aware of any
 subcommands of openssl - it's quite literally a wrapper for `exec()`-ing the openssl app on your computer : you are
 responsible for supplying all subcommands, arguments, files, etc.
 
@@ -87,9 +87,9 @@ const {custom_out} = await openssl('x509' , {
 // custom_out = Buffer instance
 ```
 
-## advanced usage 🌶️️
+## Advanced usage️
 
-there are some goodies under openssl, for example async function `create_rsa_keypair()` that will
+There are some goodies under openssl, for example async function `create_rsa_keypair()` that will
 perform some daily openssl tasks.
 
 ```javascript
@@ -100,7 +100,7 @@ const {private_key , public_key} = await openssl.create_rsa_keypair({bits : 4096
 // public_key = Buffer instance
 ```
 
-the following functions are offered:
+The following functions are offered:
 
 - `create_cert()`
 - `create_csr()`
@@ -108,7 +108,7 @@ the following functions are offered:
 - `sign_csr()`
 - `revoke_cert()`
 
-some of these functions assume you have a configured CA (along with config file, database file, crlnumber file, etc).
+Some of these functions assume you have a configured CA (along with config file, database file, crlnumber file, etc).
 in thesee case, all the elements of the configured CA must be present in order for the function to work.
 
 **NOTE** the openssl goodies functions shown here are not aware of your local CA configuration. You must pass the CA
@@ -122,7 +122,7 @@ However, you don't need to keep your own config file; you can generate it on-the
 const {create_conf_data} = require('./openssl-utils');
 ```
 
-for example, to sign a CSR, you need a fully-configured CA. assuming you have all the files (database file, serial file,
+For example, to sign a CSR, you need a fully-configured CA. assuming you have all the files (database file, serial file,
 etc) ready, call `create_conf_data.for_ca_operations()` to generate a config file `Buffer`, which you can then pass to
 `openssl.sign_csr()`.
 
@@ -144,11 +144,11 @@ const cert_buffer = await openssl.sign_csr({
 ```
 
 <details>
-<summary>for more advanced usage of create_conf_data()...</summary>
+<summary>For more advanced usage of create_conf_data()...</summary>
 
-the `create_conf_data()` function converts a javascript object into an INI file (openssl config file) and returns
-its `Buffer`
-representation so you can pass it to `openssl()`. Call `create_conf_data()` directly to create your own config file:
+The `create_conf_data()` function converts a javascript object into an INI file (openssl config file) and returns
+its `Buffer` representation so you can pass it to `openssl()`. Call `create_conf_data()` directly to create your own
+config file:
 
 ```javascript 
 const {create_conf_data} = require('./openssl-utils');
@@ -163,7 +163,7 @@ conf_data_buffer = create_conf_data({
 
 </details>
 
-note that openssl goodies functions such as `sign_csr()` can be called with kwarg-style calling. consider the
+Note that openssl goodies functions such as `sign_csr()` can be called with kwarg-style calling. consider the
 function signature:
 
 ```javascript
@@ -172,13 +172,13 @@ async function sign_csr(csr , ca_config , ca_cert , ca_private_key , {ca_private
 }
 ```
 
-this can be called like this
+This can be called like this
 
 ```javascript
 openssl.sign_csr(csr_buffer , ca_config_buffer , ca_cert_buffer , ... , {days : 9999});
 ```
 
-or to increase readbility,
+... or to increase readbility,
 
 ```javascript
 openssl.sign_csr({csr : csr_buffer , ca_config : ca_config_buffer , ca_cert : ca_cert_buffer , ... , days : 9999});
@@ -186,51 +186,49 @@ openssl.sign_csr({csr : csr_buffer , ca_config : ca_config_buffer , ca_cert : ca
 
 ## more advanced usage 🍼
 
-a mini programamble cert authority, called `PkiCA` is provided for all your home cert authority needs. It has built-in
+A mini programamble cert authority, called `CA` is provided for all your home cert authority needs. It has built-in
 config management (takes care of all your CRL, OpenSSL database files, and crap like that), is easily serializable, and
 can be hierarical.
 
 ```javascript
 const {pki} = require('./openssl-utils');
-const {PkiCA} = pki;
+const {CA} = pki;
 ```
 
-**NOTE** the `PkiCA` works solely in-memory, it is not aware of any file on your disk. It requires the temp directory
-from time to time
-when it performs certain operations but it's transient: the temp directory gets deleted right away. Everything stays in
-memory.
+**NOTE** the `CA` works solely in-memory, it is not aware of any file on your disk. It requires the temp directory
+from time to time when it performs certain operations but it's transient: the temp directory gets deleted right away.
+Everything stays in memory.
 
 Persistence can be achieved by serializing to and deserializing from JSON files (see `easily serializable` below). You
-are
-responsible for saving the JSON file to disk (and maybe compressing it) and reading it from disk.
+are responsible for saving the JSON file to disk (and maybe compressing it) and reading it from disk.
 
 ### Features & Examples
 
 - built in config management
   ```javascript
-  const root_ca = new PkiCA();  
+  const root_ca = new CA();  
   const crl_buffer = await root_ca.get_crl(); // to get the CRL file ; if it's not there it'll be generated; it'll be cached automatically
-  const intermediate_ca = await root_ca.add_ca({common_name: 'my-ca'}); // creates an intermediate CA, creates the key-pair and cert, and signs the cert
+  const intermediate_ca = await root_ca.add_ca('my-ca'); // creates an intermediate CA, creates the key-pair and cert, and signs the cert
   const int_ca_cert_buffer = intermediate_ca.cert;
   const int_ca_cert_chain_buffer = intermediate_ca.cert_chain; 
   ```
     - no need to sign CSR; you get the signed cert and key right away
       ```javascript
-      const root_ca = new PkiCA(); // this creates the root CA's keypair and cert right away
-      const server = await root_ca.add_server({common_name : 'server1'}); // this creates server.csr internally, and signs it using the root CA's key right away
+      const root_ca = new CA(); // this creates the root CA's keypair and cert right away
+      const server = await root_ca.add_server('server1'); // this creates server.csr internally, and signs it using the root CA's key right away
       const server_cert = server.cert; // the server's signed cert and key are immediately available to you
       const server_cert_chain = server.cert_chain; // signed cert chain
-      const server_key = server.privateKey;  
+      const server_key = server.private_key;  
       ```
 
     - revocation is easy
       ```javascript
-      const root_ca = new PkiCA(); // this creates the root CA's keypair and cert right away
-      const server = await root_ca.add_server({common_name : 'server1'}); // this creates server.csr internally, and signs it using the root CA's key right away
+      const root_ca = new CA(); // this creates the root CA's keypair and cert right away
+      const server = await root_ca.add_server('server1'); // this creates server.csr internally, and signs it using the root CA's key right away
       const server_cert = server.cert; // get the server cert
       await root_ca.revoke(server); // to invalidate the server's cert
       const crl = await root_ca.get_crl(); // gets the CRL PEM file so you can distribute it on your server etc
-      const is_revoked = server.isRevoked; // gives : true
+      const is_revoked = server.is_revoked; // gives : true
       try {
           const tried_to_get_cert = root_ca.cert; // this raises : {revoked:true}
       }
@@ -241,10 +239,10 @@ responsible for saving the JSON file to disk (and maybe compressing it) and read
 
 - easily serializable
   ```javascript
-  const root_ca = new PkiCA();  
+  const root_ca = new CA();  
   const json_str = root_ca.toString();
   // deserialize and recreate the CA object in memory
-  const ca = PkiCA.fromJSON(json_str);
+  const ca = CA.fromJSON(json_str);
   // make use of the "updated" event to write only when there's change made to the CA
   // this event fires also if any child or grandchild is updated
   // to avoid writing too freequently, you can set a spring-load timer, but that's up to you
@@ -255,10 +253,10 @@ responsible for saving the JSON file to disk (and maybe compressing it) and read
 
 - hierarical
   ```javascript
-  const root_ca = new PkiCA();
-  const int_ca = await root_ca.add_ca({common_name : 'my_intermediate_ca'});
-  const int_ca_2 = await int_ca.add_ca({common_name : 'my_intermediate_ca_2'});
-  const server = await int_ca_2.add_server({common_name : 'my_server'});
+  const root_ca = new CA();
+  const int_ca = await root_ca.add_ca('my_intermediate_ca');
+  const int_ca_2 = await int_ca.add_ca('my_intermediate_ca_2');
+  const server = await int_ca_2.add_server('my_server');
   
   const gives_you_the_same_sever = root_ca.get_child({name : 'my_intermediate_ca'}) // the subject's common_name becomse int_ca.name
       .get_child({name : 'my_intermediate_ca_2'})
@@ -284,12 +282,12 @@ see `try-pki` for an example.
 
 - performance
 
-  for I/O performance, dont serialize into JSON string; the `.toJSON()` method returns a serialization-safe JSON object;
+  For I/O performance, dont serialize into JSON string; the `.toJSON()` method returns a serialization-safe JSON object;
   use `MessagePack` or things like to store it to disk in an efficient manner.
 
 - security
 
-  if you serialize your `PkiCA` object and write it to disk, you are responsible for securing that file on disk! set
-  tight permission like `rw-------` to the file, use S3 and set permissions, whatever you learned on your first day as
-  an admin!
+  If you serialize your `CA` object and write it to disk, you are responsible for securing that file on disk! Set tight
+  permission like `rw-------` to the file, use S3 and set permissions, whatever you learned on your first day
+  as an admin!
 
