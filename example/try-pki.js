@@ -88,10 +88,10 @@ const fsPromises = require('node:fs').promises;
         console.warn(root_ca);
 
         try {
-            console.warn('revokee cert?');
+            console.warn('tryuing to get revokee cert');
             console.log(revokee.cert);
         } catch (err) {
-            console.warn('fail to get revokee cert' , err);
+            console.warn('... and we fail to get revokee cert, which was expected' , err);
         }
         // const found = root_ca.get_child({subject : 'CN=intermediate-ca'});
         // console.log({found});
